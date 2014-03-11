@@ -29,6 +29,11 @@ namespace Rhino.DSL
 			set { baseDirectory = value; }
 		}
 
+        /// <summary>
+        /// Flag to force compilation of all scripts in a directory when a script changes
+        /// </summary>
+        public bool CompileAllOnScriptChange { get; set; }
+
 		///<summary>
 		/// Register a new DSL engine that is tied to a specific base type
 		///</summary>
@@ -199,8 +204,18 @@ namespace Rhino.DSL
 				}
 				engine.Storage.NotifyOnChange(urls, delegate(string invalidatedUrl)
 				{
-					engine.Cache.Remove(invalidatedUrl);
-					standAloneCompilation.Add(invalidatedUrl);
+                    if (CompileAllOnScriptChange)
+                    {
+                        foreach (var batchUrl in urls)
+                        {
+                            engine.Cache.Remove(batchUrl);
+                        }
+                    }
+                    else
+                    {
+                        engine.Cache.Remove(invalidatedUrl);
+                        standAloneCompilation.Add(invalidatedUrl);
+                    }
 				});
 			});
 		}

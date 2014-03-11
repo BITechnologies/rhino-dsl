@@ -80,6 +80,7 @@ namespace Rhino.DSL
                     {
                         pathToFileWatchers[path] = watcher = new FileSystemWatcher(path, FileNameFormat);
                         watcher.EnableRaisingEvents = true;
+                        watcher.NotifyFilter |= NotifyFilters.Attributes;
                     }
                     watcher.Changed += delegate(object sender, FileSystemEventArgs e)
                     {
