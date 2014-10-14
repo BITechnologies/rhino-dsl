@@ -1,6 +1,7 @@
 namespace Rhino.DSL
 {
 	using System;
+    using System.Linq;
 	using System.Collections.Generic;
 	using System.Reflection;
 	using Boo.Lang.Compiler;
@@ -28,6 +29,11 @@ namespace Rhino.DSL
 			get { return baseDirectory ?? ""; }
 			set { baseDirectory = value; }
 		}
+
+        /// <summary>
+        /// The directory for scripts common to many engines.
+        /// </summary>
+        public string CommonScriptsDirectory { get; set; }
 
         /// <summary>
         /// Flag to force compilation of all scripts in a directory when a script changes
@@ -132,13 +138,13 @@ namespace Rhino.DSL
 					CompilerContext compilerContext;
 					try
 					{
-						compilerContext = engine.Compile(urls);
+                        compilerContext = engine.Compile(CombineWithCommonScripts(engine, urls));
 					}
 					catch (Exception)
 					{
 						// if we fail to compile with batch, we will try just the current url
 						urls = new string[] { url };
-						compilerContext = engine.Compile(urls);
+                        compilerContext = engine.Compile(CombineWithCommonScripts(engine, urls));
 					}
 					Assembly assembly = compilerContext.GeneratedAssembly;
 					RegisterBatchInCache(engine, urls, assembly);
@@ -153,6 +159,14 @@ namespace Rhino.DSL
 				return default(TDslBase);
 			return (TDslBase)engine.CreateInstance(type, parameters);
 		}
+
+        private string[] CombineWithCommonScripts(DslEngine engine, string[] urls)
+        {
+            var path = CommonScriptsDirectory;
+            if (path == null) return urls;
+            string[] matchingUrls = engine.Storage.GetMatchingUrlsIn(BaseDirectory, ref path);
+            return urls.Concat(matchingUrls).ToArray();
+        }
 
 		private DslEngine GetEngine<TDslBase>()
 		{
