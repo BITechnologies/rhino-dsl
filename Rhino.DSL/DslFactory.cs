@@ -138,13 +138,13 @@ namespace Rhino.DSL
 					CompilerContext compilerContext;
 					try
 					{
-                        compilerContext = engine.Compile(CombineWithCommonScripts(engine, urls));
+                        compilerContext = engine.Compile(urls);
 					}
 					catch (Exception)
 					{
 						// if we fail to compile with batch, we will try just the current url
 						urls = new string[] { url };
-                        compilerContext = engine.Compile(CombineWithCommonScripts(engine, urls));
+                        compilerContext = engine.Compile(urls);
 					}
 					Assembly assembly = compilerContext.GeneratedAssembly;
 					RegisterBatchInCache(engine, urls, assembly);
@@ -159,14 +159,6 @@ namespace Rhino.DSL
 				return default(TDslBase);
 			return (TDslBase)engine.CreateInstance(type, parameters);
 		}
-
-        private string[] CombineWithCommonScripts(DslEngine engine, string[] urls)
-        {
-            var path = CommonScriptsDirectory;
-            if (path == null) return urls;
-            string[] matchingUrls = engine.Storage.GetMatchingUrlsIn(BaseDirectory, ref path);
-            return urls.Concat(matchingUrls).ToArray();
-        }
 
 		private DslEngine GetEngine<TDslBase>()
 		{
@@ -236,8 +228,14 @@ namespace Rhino.DSL
 
 		private string[] GetUrlsFromDslEngine(DslEngine engine, ref string path)
 		{
-			string[] matchingUrls = engine.Storage.GetMatchingUrlsIn(BaseDirectory, ref path);
-			List<string> urls = new List<string>(matchingUrls ?? new string[0]);
+			string[] matchingUrls = engine.Storage.GetMatchingUrlsIn(BaseDirectory, ref path) ?? new string[0];
+            var commonPath = CommonScriptsDirectory;
+            if (commonPath != null)
+            {
+                string[] commonUrls = engine.Storage.GetMatchingUrlsIn(BaseDirectory, ref commonPath);
+                matchingUrls = matchingUrls.Concat(commonUrls ?? new string[0]).ToArray();
+            }
+			List<string> urls = new List<string>(matchingUrls);
 			// even if the path is in the cache, we still return the it
 			// so we will get a new version
 			if (urls.Exists(GetMatchPathPredicate(path)) == false &&
