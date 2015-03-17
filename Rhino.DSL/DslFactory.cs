@@ -142,6 +142,10 @@ namespace Rhino.DSL
 					}
 					catch (Exception)
 					{
+                        if (CompileAllOnScriptChange) //no compilation on batch error
+                        {
+                            throw;
+                        }
 						// if we fail to compile with batch, we will try just the current url
 						urls = new string[] { url };
                         compilerContext = engine.Compile(urls);
