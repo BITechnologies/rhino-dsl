@@ -1,15 +1,15 @@
 namespace Rhino.DSL
 {
-	using System;
+    using Boo.Lang.Compiler;
+    using System;
+    using System.Collections.Generic;
     using System.Linq;
-	using System.Collections.Generic;
-	using System.Reflection;
-	using Boo.Lang.Compiler;
+    using System.Reflection;
 
-	/// <summary>
-	/// Manage the creation of DSL instances, cache and creates them.
-	/// </summary>
-	public class DslFactory
+    /// <summary>
+    /// Manage the creation of DSL instances, cache and creates them.
+    /// </summary>
+    public class DslFactory
 	{
 		private readonly IDictionary<Type, DslEngine> typeToDslEngine = new Dictionary<Type, DslEngine>();
 		private string baseDirectory;
@@ -33,17 +33,24 @@ namespace Rhino.DSL
         /// <summary>
         /// The directory for scripts common to many engines.
         /// </summary>
-        public string CommonScriptsDirectory { get; set; }
+        public List<string> CommonScriptsDirectories { get; private set; }
 
         /// <summary>
         /// Flag to force compilation of all scripts in a directory when a script changes
         /// </summary>
         public bool CompileAllOnScriptChange { get; set; }
 
-		///<summary>
-		/// Register a new DSL engine that is tied to a specific base type
-		///</summary>
-		public void Register<TDslBase>(DslEngine engine)
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        public DslFactory()
+        {
+            CommonScriptsDirectories = new List<string>();
+        }
+        ///<summary>
+        /// Register a new DSL engine that is tied to a specific base type
+        ///</summary>
+        public void Register<TDslBase>(DslEngine engine)
 		{
 			typeToDslEngine.Add(typeof(TDslBase), engine);
 		}
@@ -232,13 +239,14 @@ namespace Rhino.DSL
 
 		private string[] GetUrlsFromDslEngine(DslEngine engine, ref string path)
 		{
-			string[] matchingUrls = engine.Storage.GetMatchingUrlsIn(BaseDirectory, ref path) ?? new string[0];
-            var commonPath = CommonScriptsDirectory;
-            if (commonPath != null)
+			List<string> matchingUrls = new List<string>(engine.Storage.GetMatchingUrlsIn(BaseDirectory, ref path) ?? Enumerable.Empty<string>());
+            foreach (var commonPath in CommonScriptsDirectories.Where(d => !string.IsNullOrEmpty(d)))
             {
-                string[] commonUrls = engine.Storage.GetMatchingUrlsIn(BaseDirectory, ref commonPath);
-                matchingUrls = matchingUrls.Concat(commonUrls ?? new string[0]).ToArray();
+                string tempPath = commonPath;
+                string[] commonUrls = engine.Storage.GetMatchingUrlsIn(BaseDirectory, ref tempPath);
+                matchingUrls.AddRange(commonUrls ?? Enumerable.Empty<string>());
             }
+            
 			List<string> urls = new List<string>(matchingUrls);
 			// even if the path is in the cache, we still return the it
 			// so we will get a new version
