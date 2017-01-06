@@ -16,16 +16,36 @@ namespace Rhino.DSL
         private IDslEngineStorage storage;
         private IDslEngineCache cache;
 		private DslCompilerContextCache compilerContextCache;
+        private string engineName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DslEngine"/> class.
         /// </summary>
         public DslEngine()
+            : this(null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DslEngine"/> class.
+        /// </summary>
+        public DslEngine(string engineName)
         {
             Storage = new FileSystemDslEngineStorage();
             Cache = new DefaultDslEngineCache();
+            EngineName = engineName;
         }
 
+
+        /// <summary>
+        /// Gets or sets the engine name.
+        /// </summary>
+        /// <value>The cache.</value>
+        public string EngineName
+        {
+            get { return engineName; }
+            set { engineName = value; }
+        }
 
         /// <summary>
         /// Gets or sets the cache.

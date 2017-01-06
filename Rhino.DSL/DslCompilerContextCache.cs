@@ -79,6 +79,11 @@ namespace Rhino.DSL
 		private string GetCacheFileName(DslEngine engine, string[] urls)
 		{
 			string fileName = storage.GetChecksumForUrls(engine.GetType(), urls) + ".boocache";
+            string engineName = engine.EngineName;
+            if (engineName != null)
+            {
+                fileName = string.Format("{0}_{1}", engineName, fileName);
+            }
 			return Path.Combine(Path.GetTempPath(), fileName);
 		}
 
